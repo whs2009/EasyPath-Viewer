@@ -17,7 +17,8 @@ PINS = {
 def package(binary, dest):
     machine = platform.machine().lower()
     arch = {"arm64":"arm64","aarch64":"arm64","x86_64":"x64"}[machine]
-    system = {"darwin":"macos","linux":"ubuntu"}[sys.platform]
+    from runpy import run_path
+    system = run_path(str(Path(__file__).resolve().parents[2]/"packaging/native_target.py"))["system_name"]()
     tool="Annotator" if binary.name.startswith("EasyPath-Slide-Annotator-") else "Viewer"
     title="EasyPath Slide "+tool
     guide=Path(__file__).with_name("ANNOTATOR-GUIDE.md" if tool=="Annotator" else "USER-GUIDE.md")
@@ -51,7 +52,8 @@ def package(binary, dest):
             asset,digest = PINS[machine]
             url = f"https://api.github.com/repos/AppImage/type2-runtime/releases/assets/{asset}"
             req = Request(url,headers={"Accept":"application/octet-stream","User-Agent":"EasyPath-native-build"})
-            with urlopen(req, timeout=60) as response:
+            staged = os.environ.get("EASYPATH_APPIMAGE_RUNTIME")
+            with (Path(staged).open("rb") if staged else urlopen(req, timeout=60)) as response:
                 runtime = response.read(4*1024*1024+1)
             if hashlib.sha256(runtime).hexdigest() != digest:
                 raise ValueError("AppImage runtime digest mismatch.")
