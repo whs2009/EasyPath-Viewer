@@ -4,7 +4,7 @@ Explore local whole-slide images and Z planes with calibrated measurements, a ro
 
 ## Downloads
 
-**[v0.2.4-general.1](https://github.com/whs2009/EasyPath-Viewer/releases/tag/v0.2.4-general.1)**: all five General packages passed their [native build and packaged-app checks](https://github.com/whs2009/EasyPath-Viewer/actions/runs/45729147509). Use the direct downloads below and compare your file with [SHA256SUMS](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/SHA256SUMS). GitHub's automatic source ZIP is not a standalone executable.
+**[v0.2.4-general.1](https://github.com/whs2009/EasyPath-Viewer/releases/tag/v0.2.4-general.1)**: the Windows, macOS and Ubuntu General packages passed their [native build and packaged-app checks](https://github.com/whs2009/EasyPath-Viewer/actions/runs/45729147509). Verify those downloads with [SHA256SUMS](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/SHA256SUMS). GitHub's automatic source ZIP is not a standalone executable.
 
 | Platform | Release asset |
 |---|---|
@@ -13,8 +13,11 @@ Explore local whole-slide images and Z planes with calibrated measurements, a ro
 | macOS Intel | [EasyPath-Slide-Viewer-macos-x64.dmg](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/EasyPath-Slide-Viewer-macos-x64.dmg) |
 | Ubuntu x86-64 | [EasyPath-Slide-Viewer-ubuntu-x64.AppImage](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/EasyPath-Slide-Viewer-ubuntu-x64.AppImage) |
 | Ubuntu ARM64 | [EasyPath-Slide-Viewer-ubuntu-arm64.AppImage](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/EasyPath-Slide-Viewer-ubuntu-arm64.AppImage) |
+| CentOS Stream 9 x86-64 | [EasyPath-Slide-Viewer-centos-stream9-x64.AppImage](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/EasyPath-Slide-Viewer-centos-stream9-x64.AppImage) ([SHA-256](https://github.com/whs2009/EasyPath-Viewer/releases/download/v0.2.4-general.1/EasyPath-Slide-Viewer-centos-stream9-x64.AppImage.sha256)) |
 
-On Windows, compare `Get-FileHash .\<filename> -Algorithm SHA256` with the published checksum. On macOS use `shasum -a 256`, then open the DMG. On Ubuntu use `sha256sum` and give the AppImage execute permission before launching it. No Python installation is needed for packaged downloads. Follow your organization's signing and execution policies.
+The CentOS AppImage passed its [native CentOS Stream 9 build and tests](https://github.com/whs2009/EasyPath-Viewer/actions/runs/45814335632). To verify it, download the SHA-256 file in its row and run `sha256sum -c EasyPath-Slide-Viewer-centos-stream9-x64.AppImage.sha256` in the download directory.
+
+On Windows, compare `Get-FileHash .\<filename> -Algorithm SHA256` with the published checksum. On macOS use `shasum -a 256`, then open the DMG. On Ubuntu or CentOS use `sha256sum` and give the AppImage execute permission before launching it. No Python installation is needed for packaged downloads. Follow your organization's signing and execution policies.
 
 ## Supported formats
 
