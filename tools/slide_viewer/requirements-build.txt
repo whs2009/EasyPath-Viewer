@@ -1,0 +1,13 @@
+pyinstaller==6.20.0
+numpy==2.4.4
+openslide-bin==4.0.0.13
+openslide-python==1.4.3
+pillow==12.2.0
+pydantic==2.13.5
+wsidicom==0.35.0
+imagecodecs==2025.11.11
+tifffile==2025.6.11
+pydicom==3.0.1
+shapely==2.1.2
+setuptools==80.9.0
+wheel==0.45.1
