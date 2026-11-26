@@ -52,7 +52,8 @@ def package(binary, dest):
             asset,digest = PINS[machine]
             url = f"https://api.github.com/repos/AppImage/type2-runtime/releases/assets/{asset}"
             req = Request(url,headers={"Accept":"application/octet-stream","User-Agent":"EasyPath-native-build"})
-            with urlopen(req, timeout=60) as response:
+            staged = os.environ.get("EASYPATH_APPIMAGE_RUNTIME")
+            with (Path(staged).open("rb") if staged else urlopen(req, timeout=60)) as response:
                 runtime = response.read(4*1024*1024+1)
             if hashlib.sha256(runtime).hexdigest() != digest:
                 raise ValueError("AppImage runtime digest mismatch.")

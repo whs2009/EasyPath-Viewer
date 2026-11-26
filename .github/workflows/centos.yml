@@ -14,6 +14,7 @@ jobs:
       image: quay.io/centos/centos@sha256:0ae0c1755d508338bd29af1d9c38e38aa6d98d34b637826dd1f1d932888147c1
     env:
       EXPECTED_TARGET: centos-stream9-x64
+      EASYPATH_APPIMAGE_RUNTIME: /tmp/easypath-centos-appimage-runtime
     steps:
       - name: Provision the EL9 build environment
         shell: bash
@@ -27,6 +28,17 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Fetch the fixed public AppImage runtime
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/octet-stream' \
+            https://api.github.com/repos/AppImage/type2-runtime/releases/assets/657374641 -o "$EASYPATH_APPIMAGE_RUNTIME"
+          echo "617aa77314d57c8b8e4fae9c3f0b35af7b30d5529cb69e98f64f92510ed98a46  $EASYPATH_APPIMAGE_RUNTIME" | sha256sum -c -
+          chmod 444 "$EASYPATH_APPIMAGE_RUNTIME"
       - name: Build and test the packaged General executable without vendor SDKs
         shell: bash
         run: |
