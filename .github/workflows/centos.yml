@@ -1,0 +1,46 @@
+name: Build and test CentOS Stream 9 General edition
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/centos-stream9]
+    paths: ['packaging/**', 'tools/**', '.github/workflows/centos.yml']
+permissions:
+  contents: read
+jobs:
+  centos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container:
+      image: quay.io/centos/centos@sha256:0ae0c1755d508338bd29af1d9c38e38aa6d98d34b637826dd1f1d932888147c1
+    env:
+      EXPECTED_TARGET: centos-stream9-x64
+    steps:
+      - name: Provision the EL9 build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          [[ $ID == centos && $NAME == "CentOS Stream" && $VERSION_ID == 9 && $(uname -m) == x86_64 ]]
+          dnf install -y epel-release dnf-plugins-core
+          dnf --enablerepo=crb install -y gcc-c++ cmake make git tar gzip findutils diffutils shadow-utils python3.12 python3.12-devel python3.12-pip libX11-devel libXext-devel libXft-devel libXrender-devel libXfixes-devel libXcursor-devel libXinerama-devel fontconfig-devel libpng-devel libjpeg-turbo-devel zlib-devel squashfs-tools xorg-x11-server-Xvfb xorg-x11-xauth
+          useradd --create-home builder
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build and test the packaged General executable without vendor SDKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -d vendor_sdk && test ! -d easypath/vendor_libs
+          install -d -o builder -g builder /home/builder/source
+          tar --exclude=.git -cf - . | tar -C /home/builder/source -xf -
+          chown -R builder:builder /home/builder/source
+          runuser -u builder -- bash -c 'set -eu; cd /home/builder/source; python3.12 -m venv /home/builder/venv; source /home/builder/venv/bin/activate; python -m pip install --only-binary=:all: -r tools/slide_viewer/requirements-build.txt; xvfb-run -a python -B packaging/build.py'
+          mkdir verified
+          cp /home/builder/source/verified/*-centos-stream9-x64.AppImage verified/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: general-centos-stream9-x64
+          path: verified/*.AppImage
+          if-no-files-found: error
+          compression-level: 0

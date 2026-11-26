@@ -17,7 +17,8 @@ PINS = {
 def package(binary, dest):
     machine = platform.machine().lower()
     arch = {"arm64":"arm64","aarch64":"arm64","x86_64":"x64"}[machine]
-    system = {"darwin":"macos","linux":"ubuntu"}[sys.platform]
+    from runpy import run_path
+    system = run_path(str(Path(__file__).resolve().parents[2]/"packaging/native_target.py"))["system_name"]()
     tool="Annotator" if binary.name.startswith("EasyPath-Slide-Annotator-") else "Viewer"
     title="EasyPath Slide "+tool
     guide=Path(__file__).with_name("ANNOTATOR-GUIDE.md" if tool=="Annotator" else "USER-GUIDE.md")

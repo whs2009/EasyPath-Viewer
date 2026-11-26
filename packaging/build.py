@@ -29,7 +29,8 @@ def audit(exe):
 def build():
     os.chdir(ROOT)
     py=sys.executable
-    osname={"darwin":"macos","win32":"windows","linux":"ubuntu"}[sys.platform]
+    from native_target import system_name
+    osname=system_name()
     arch={"amd64":"x64","x86_64":"x64","arm64":"arm64","aarch64":"arm64"}[platform.machine().lower()]
     target=osname+"-"+arch
     if os.environ.get("EXPECTED_TARGET",target)!=target:raise ValueError("Wrong native runner")
@@ -53,7 +54,7 @@ def build():
         check(exe)
     else:
         run(py,TOOL/"package_unix.py",exe,folder)
-        if osname=="ubuntu":
+        if osname in {"ubuntu","centos-stream9"}:
             pkg=folder/(name+".AppImage")
             with TemporaryDirectory() as tmp:
                 run(pkg,"--appimage-extract","AppRun",cwd=tmp)

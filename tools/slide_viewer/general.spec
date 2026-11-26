@@ -12,8 +12,9 @@ root = src.parents[1]
 
 system = platform.system()
 arch = {"amd64":"x64","x86_64":"x64","aarch64":"arm64","arm64":"arm64"}[platform.machine().lower()]
-target = {"Windows":"windows","Darwin":"macos","Linux":"ubuntu"}[system] + "-" + arch
-if target not in {"windows-x64","macos-x64","macos-arm64","ubuntu-x64","ubuntu-arm64"}:
+from runpy import run_path
+target = run_path(str(root/"packaging/native_target.py"))["system_name"]() + "-" + arch
+if target not in {"windows-x64","macos-x64","macos-arm64","ubuntu-x64","ubuntu-arm64","centos-stream9-x64"}:
     raise ValueError("Unsupported desktop target")
 name = "EasyPath-Slide-Viewer-" + target
 annotator=False
