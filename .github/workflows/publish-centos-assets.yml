@@ -1,0 +1,76 @@
+name: Publish verified CentOS General release asset
+on:
+  push:
+    branches: [codex/publish-centos-stream9-assets]
+    paths: ['.github/workflows/publish-centos-assets.yml']
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.repository == 'whs2009/EasyPath-Viewer' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      actions: read
+      contents: write
+    env:
+      TAG: 'v0.2.4-general.1'
+      RELEASE: '458801935'
+      RUN: '45814335632'
+      ARTIFACT: '15115205640'
+      HEAD: '9009de7969753e434a959dcebd2a49470373292b'
+      ZIP_SHA: '5a0ada795a0b0e768fe98302ce1ef9c05d6c399a67dfc4c8fe100fba83f1b7be'
+      FILE: 'EasyPath-Slide-Viewer-centos-stream9-x64.AppImage'
+      FILE_SHA: 'a059224fc4729e456729dba63e6dc86f2c549b39bf6c80149e3ee89a9065698b'
+      BYTES: '57022968'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify build provenance and the exact General AppImage
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="repos/$GITHUB_REPOSITORY"
+          gh api "$base" | jq -e '(.private == false) and (.visibility == "public")' >/dev/null
+          gh api "$base/actions/runs/$RUN" | jq -e --arg head "$HEAD" '.head_sha==$head and .conclusion=="success" and .path==".github/workflows/centos.yml" and .head_repository.full_name==.repository.full_name' >/dev/null
+          gh api "$base/actions/artifacts/$ARTIFACT" | jq -e --arg head "$HEAD" --arg digest "sha256:$ZIP_SHA" --argjson run "$RUN" '.name=="general-centos-stream9-x64" and .expired==false and .digest==$digest and .workflow_run.id==$run and .workflow_run.head_sha==$head and .workflow_run.repository_id==.workflow_run.head_repository_id' >/dev/null
+          gh api "$base/actions/artifacts/$ARTIFACT/zip" > input.zip
+          echo "$ZIP_SHA  input.zip" | sha256sum -c -
+          python3 -I - <<'PY'
+          import os, shutil, zipfile
+          name=os.environ["FILE"]
+          with zipfile.ZipFile("input.zip") as z:
+              assert z.namelist()==[name] and z.getinfo(name).file_size==int(os.environ["BYTES"])
+              with z.open(name) as src, open(name,"xb") as dst:
+                  shutil.copyfileobj(src,dst)
+          PY
+          printf '%s  %s\n' "$FILE_SHA" "$FILE" > "$FILE.sha256"
+          sha256sum -c "$FILE.sha256"
+      - name: Append missing assets without replacing any existing download
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="repos/$GITHUB_REPOSITORY"
+          gh api "$base/releases/tags/$TAG" > before.json
+          jq -e --argjson id "$RELEASE" '.id==$id and .draft==false and .prerelease==false and .immutable==false' before.json >/dev/null
+          for f in "$FILE" "$FILE.sha256"; do
+            pin=$(sha256sum "$f" | cut -d' ' -f1)
+            if jq -e --arg n "$f" '.assets | any(.name==$n)' before.json >/dev/null; then
+              jq -e --arg n "$f" --arg d "sha256:$pin" '.assets | any(.name==$n and .digest==$d and .state=="uploaded")' before.json >/dev/null
+            else
+              gh release upload "$TAG" "$f" --repo "$GITHUB_REPOSITORY"
+            fi
+          done
+          gh api "$base/releases/$RELEASE" > after.json
+          jq -e -s '.[0] as $o | .[1] as $n | all($o.assets[]; . as $a | any($n.assets[]; .id==$a.id and .name==$a.name and .digest==$a.digest and .size==$a.size))' before.json after.json >/dev/null
+          for f in "$FILE" "$FILE.sha256"; do
+            pin=$(sha256sum "$f" | cut -d' ' -f1)
+            jq -e --arg n "$f" --arg d "sha256:$pin" '.assets | any(.name==$n and .digest==$d and .state=="uploaded")' after.json >/dev/null
+          done
+          before=$(jq -r '.body' before.json)
+          after=$(jq -r '.body' after.json)
+          [[ "$before" == "$after" ]]
+          root="https://github.com/$GITHUB_REPOSITORY"
+          note="CentOS Stream 9 x86-64 is also available as a General AppImage. It passed a [separate native build]($root/actions/runs/$RUN); verify it with its [CentOS checksum]($root/releases/download/$TAG/$FILE.sha256)."
+          if [[ "$before" != *"$note"* ]]; then
+            gh api --method PATCH "$base/releases/$RELEASE" -f body="$before"$'\n\n'"$note" --silent
+          fi
